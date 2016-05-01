@@ -508,6 +508,17 @@ Then we can look for our output files and see something similar to as before:
       -rw-r--r--   2 vsochat hadoop     122460 2016-05-01 17:45 /user/vsochat/DATA/cap_wc_stream/part-00000
       -rw-r--r--   2 vsochat hadoop     120139 2016-05-01 17:45 /user/vsochat/DATA/cap_wc_stream/part-00001
 
+#### pyspark
+Let's try some basic scripts with pyspark - these are from the introduction/tutorial page. First take a look at the script [hadoop_pyspark/count_a_b.py](hadoop_pyspark/count_a_b.py). The script basically reads in our same text file from storage, counts the A's and B's. and prints to the console. I think it used to be that we would run pyspark scripts with the pyspark executable, but now it looks like we send the script to spark-submit:
+
+      /usr/lib/spark/bin/spark-submit count_a_b.py
+
+You will again see a lot of output, but look for these lines to see that the job was successful:
+
+      16/05/01 18:09:42 INFO scheduler.DAGScheduler: Job 1 finished: count at /home/02092/vsochat/SCRIPT/spark/noob-spark/hadoop/hadoop_pyspark/word_count.py:8, took 0.078777 s
+      Lines with a: 17428, lines with b: 8357
+
+
 ## YARN is a resource manager
 there is something called YARN (yet another resource manager) that looks like it helps to move files and resources around for your cluster, and I believe that when we set up configuration in a python script, we specify this (more will be discussed later). You can also type `which yarn` to see that it also has a command line utility. Some other commands I think will be useful:
 

@@ -1,1 +1,2 @@
-hadoop fs –put crimeandpunishment.txt
+hadoop fs -mkdir /user/$USER/DATA
+hadoop fs -put crimeandpunishment.txt /user/$USER/DATA
