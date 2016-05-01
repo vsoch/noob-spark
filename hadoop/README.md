@@ -518,6 +518,29 @@ You will again see a lot of output, but look for these lines to see that the job
       16/05/01 18:09:42 INFO scheduler.DAGScheduler: Job 1 finished: count at /home/02092/vsochat/SCRIPT/spark/noob-spark/hadoop/hadoop_pyspark/word_count.py:8, took 0.078777 s
       Lines with a: 17428, lines with b: 8357
 
+I made a few other examples, here is how to run:
+
+- [word count with input/output files](hadoop_pyspark/word_count.py): spark-submit word_count.py /user/$USER/DATA/crimeandpunishment.txt /user/$USER/DATA/cap_wc_pyspark1
+- [estimate pi](hadoop_pyspark/estimate_pi.py): spark-submit estimate_pi.py 10
+
+I tried changing up the number of iterations: 
+
+      spark-submit estimate_pi.py 10
+      Pi is roughly 2.800000
+      spark-submit estimate_pi.py 100
+      Pi is roughly 2.800000
+      spark-submit estimate_pi.py 1000
+      Pi is roughly 3.152000
+      spark-submit estimate_pi.py 5000
+      Pi is roughly 3.143200
+      spark-submit estimate_pi.py 100000
+      Pi is roughly 3.138080
+      spark-submit estimate_pi.py 1000000
+      Pi is roughly 3.141392
+
+Nice!
+
+It seems that it's a standard thing to have a `_SUCCESS` file when the job is deemed successful.
 
 ## YARN is a resource manager
 there is something called YARN (yet another resource manager) that looks like it helps to move files and resources around for your cluster, and I believe that when we set up configuration in a python script, we specify this (more will be discussed later). You can also type `which yarn` to see that it also has a command line utility. Some other commands I think will be useful:
