@@ -420,7 +420,7 @@ Looks like some of the BLAS libraries failed, but we still got a result!
       16/05/01 16:59:08 INFO storage.BlockManagerMaster: Trying to register BlockManager
       16/05/01 16:59:08 INFO storage.BlockManagerMasterEndpoint: Registering block manager localhost:57254 with 530.0 MB RAM, BlockManagerId(driver, localhost, 57254)
       16/05/01 16:59:08 INFO storage.BlockManagerMaster: Registered BlockManager
-Training: 391, test: 110.
+      Training: 391, test: 110.
       16/05/01 16:59:11 WARN netlib.BLAS: Failed to load implementation from: com.github.fommil.netlib.NativeSystemBLAS
       16/05/01 16:59:11 WARN netlib.BLAS: Failed to load implementation from: com.github.fommil.netlib.NativeRefBLAS
       Test RMSE = 10.430543451248058.
