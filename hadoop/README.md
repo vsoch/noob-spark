@@ -485,6 +485,29 @@ The file `_SUCCESS` is totally empty, it's presence alone must indicate success.
 
 Seems to again have worked, again sans removal of punctuation, etc. :).
 
+#### Streaming
+Hadoop has an API that will let us write scripts for mapping, reducing, and do it in a streaming fashion. In the [hadoop_streaming_python](hadoop_streaming_python) folder in wordcount.sh we run the following streaming task:
+
+      hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+          -D mapred.map.tasks=4 \
+          -D mapred.reduce.tasks=2 \
+          -file ./mapper.py -mapper mapper.py \
+          -file ./reducer.py -reducer reducer.py \
+          -input /user/$USER/DATA/crimeandpunishment.txt \
+          -output /user/$USER/DATA/cap_wc_stream \
+
+Take a look at the [mapper.py](hadoop_streaming_python/mapper.py) and [reducer.py](hadoop_streaming_python/reducer.py) to see how the file is streamed from stdin, and passed to the reducer (the values in sorted order to count!) You will again see a bunch of output, and look for a line that says it completed successfully:
+
+      16/05/01 17:45:31 INFO mapreduce.Job: Job job_1462063386551_0003 completed successfully
+
+Then we can look for our output files and see something similar to as before:
+
+      hadoop fs -ls /user/vsochat/DATA/cap_wc_stream
+      Found 3 items
+      -rw-r--r--   2 vsochat hadoop          0 2016-05-01 17:45 /user/vsochat/DATA/cap_wc_stream/_SUCCESS
+      -rw-r--r--   2 vsochat hadoop     122460 2016-05-01 17:45 /user/vsochat/DATA/cap_wc_stream/part-00000
+      -rw-r--r--   2 vsochat hadoop     120139 2016-05-01 17:45 /user/vsochat/DATA/cap_wc_stream/part-00001
+
 ## YARN is a resource manager
 there is something called YARN (yet another resource manager) that looks like it helps to move files and resources around for your cluster, and I believe that when we set up configuration in a python script, we specify this (more will be discussed later). You can also type `which yarn` to see that it also has a command line utility. Some other commands I think will be useful:
 
