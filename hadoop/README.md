@@ -20,7 +20,7 @@ and received an error about loading the spark-paths. Why? They were already load
 
       /usr/lib/spark/bin/pyspark word_count.py
 
-and immediately I started to get a bunch of Java errors. The one that caught my eye was something to the effect of a path not found, but the start of the path was an address with hdfs://. I looked this up online, and realized that hdfs is a special file system (made by Google!) and ho! I needed to use hadoop to work with it. The way I think about this hadoop file system (called `hadoop fs`) is that it has many of the same commands as standard bash, and the general idea is that you move files between your local and hdfs. It then occurred to me that likely I needed to make a reservation on the [Wrangler Data Portal](https://portal.wrangler.tacc.utexas.edu/) to generate my own little hadoop file system, and was able to make a request! Back on Wrangler, I could see the status of my request with:
+and immediately I started to get a bunch of Java errors. The one that caught my eye was something to the effect of a path not found, but the start of the path was an address with hdfs://. I looked this up online, and realized that hdfs is a special file system ([made by Google!](http://research.google.com/archive/gfs.html)) and ho! I needed to use hadoop to work with it. The way I think about this hadoop file system (called `hadoop fs`) is that it has many of the same commands as standard bash, and the general idea is that you move files between your local and hdfs. It then occurred to me that likely I needed to make a reservation on the [Wrangler Data Portal](https://portal.wrangler.tacc.utexas.edu/) to generate my own little hadoop file system, and was able to make a request! Back on Wrangler, I could see the status of my request with:
 
       scontrol show reservations
 
@@ -28,14 +28,25 @@ and then when it was active, I could connect to it by obtaining the name (either
 
       idev -r hadoop+Analysis_Lonestar+1457 -m 700
 
-I then was able to do `which hadoop` to see that it was installed, and then when I typed `hadoop fs` I could see all of the [command options](http://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-common/FileSystemShell.html). I found a good definition of HDFS [here](https://developer.yahoo.com/hadoop/tutorial/module2.html):
+Note that when TACC kicks you off for some period of inactivity, you can see your running idev session with:
+
+      squeue -u vsochat
+      login1.wrangler(1)$ squeue -u vsochat
+             JOBID   PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+             13870      hadoop idv91334  vsochat  R    1:18:45      1 c252-118
+
+and then reconnect to it with ssh:
+
+      ssh -XY vsochat@c252-118
+
+Once connected to my reservation I was able to do `which hadoop` to see that it was installed, and then when I typed `hadoop fs` I could see all of the [command options](http://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-common/FileSystemShell.html). I found a good definition of HDFS [here](https://developer.yahoo.com/hadoop/tutorial/module2.html):
 
 >> HDFS, the Hadoop Distributed File System, is a distributed file system designed to hold very large amounts of data (terabytes or even petabytes), and provide high-throughput access to this information. Files are stored in a redundant fashion across multiple machines to ensure their durability to failure and high availability to very parallel applications. This module introduces the design of this distributed file system and instructions on how to operate it.
 
 
 #### Hadoop File System Commands
 
-The first thing I wanted to do was just see the file system directories. I didn't know what I was doing, so I found the help command:
+The first thing I wanted to do was just see the file system directories. It turns out, HDFS is running in a separate namespace that is isolated from local files, and this is the address that I saw in the original error message. I didn't know what I was doing, so I found the help command:
 
       hadoop fs -help
 
@@ -57,7 +68,7 @@ If you try to put a file that is already there, it gives you an error:
       hadoop fs -put crimeandpunishment.txt 
       put: `crimeandpunishment.txt': File exists
 
-Note that you can also retrieve a file from the hadoop file system with get, and if the file already exists, you get an equivalent error:
+I believe `put` is equivalent syntax and functionality to the command `-copyFromLocal`. Note that you can also retrieve a file from the hadoop file system with get, and if the file already exists, you get an equivalent error:
 
       hadoop fs -get crimeandpunishment.txt 
       get: `crimeandpunishment.txt': File exists
@@ -94,6 +105,9 @@ You can also count the number of files at a path:
       hadoop fs -count /user/vsochat/DATA
            1            1            1154664 /user/vsochat/DATA
 
+
+What do the different things mean? I believe we are looking at 1) the count, 2) the number of replicas, 3) the file size?, and 4) the location
+
 ###### Replication Factor and Block Size
 There is something called `replication factor` which gets at the number of duplicated blocks (of a file) distributed across the cluster. I haven't run anything yet so it's not totally intuitive what this means, but I found a command for adjusted the replication factor of a file:
 
@@ -116,11 +130,57 @@ Block size is defined as ([from](http://princetonits.com/blog/technology/how-to-
 
 >> The block size setting is used by HDFS to divide files into blocks and then distribute those blocks across the cluster. For example, if a cluster is using a block size of 64 MB, and a 128-MB text file was put in to HDFS, HDFS would split the file into two blocks (128 MB/64 MB) and distribute the two chunks to the data nodes in the cluster.
 
-This also looks like it is set in the global config, but you can do on the command line as well:
+What is blowing my mind is the idea that a file can be "stored" on multiple different machines. This means that you can have a single file larger than any single machine! This also means that if a machine goes kaput you could lose part of the file, but this is guarded against by redundancy (as mentioned above, the default replication factor of files is 3). The only exception is meta data about files and folders, it looks like this is stored on one node called the NameNode. When you do stuff with a file, it's this node that is contacted first, and it knows all the blocks that the relevant file(s) are stored on. The block size setting also looks like it is set in the global config, but you can do on the command line as well:
 
       hadoop fs -Ddfs.block.size=1048576
 
 I'm not entirey sure the reasons I'd want to do this, so I'm not going to mess with it for now.
+
+### Health of HDFS
+I found a deprecated command to check if a cluster is healthy:
+
+    hadoop fsck /users/vsochat
+
+and the updated command is:
+
+      hdfs fsck /user/vsochat
+      Connecting to namenode via http://c252-118.wrangler.tacc.utexas.edu:50070
+      FSCK started by vsochat (auth:SIMPLE) from /129.114.58.161 for path /user/vsochat at Sun May 01 16:06:43 CDT 2016
+      .
+      /user/vsochat/DATA/crimeandpunishment.txt:  Under replicated BP-1399245593-129.114.58.161-1462063375858:blk_1073741825_1001. Target Replicas is 2 but found 1 replica(s).
+      Status: HEALTHY
+       Total size:	1154664 B
+       Total dirs:	2
+       Total files:	1
+       Total symlinks:		0
+       Total blocks (validated):	1 (avg. block size 1154664 B)
+       Minimally replicated blocks:	1 (100.0 %)
+       Over-replicated blocks:	0 (0.0 %)
+       Under-replicated blocks:	1 (100.0 %)
+       Mis-replicated blocks:		0 (0.0 %)
+       Default replication factor:	2
+       Average block replication:	1.0
+       Corrupt blocks:		0
+       Missing replicas:		1 (50.0 %)
+       Number of data-nodes:		1
+       Number of racks:		1
+      FSCK ended at Sun May 01 16:06:43 CDT 2016 in 0 milliseconds
+
+      The filesystem under path '/user/vsochat' is HEALTHY
+
+The reason my files are under replicated is likely because I only specified two nodes, meaning I have a NameNode and one other. I wonder what would happen if I tried to increase the replication for the file?
+
+      hadoop fs -setrep 3 /user/vsochat/DATA/crimeandpunishment.txt
+      Replication 3 set: /user/vsochat/DATA/crimeandpunishment.txt
+
+Interesting, it tells me that the target is 3, but I only have 1, and that there are missing replicas... again likely because my cluster is tiny!
+
+      hdfs fsck /user/vsochat/ 
+      ...
+      /user/vsochat/DATA/crimeandpunishment.txt:  Under replicated BP-1399245593-129.114.58.161-1462063375858:blk_1073741825_1001. Target Replicas is 3 but found 1 replica(s).
+      ...
+      Missing replicas:		2 (66.666664 %)
+      
 
 ### YARN is a resource manager
 there is something called YARN (yet another resource manager) that looks like it helps to move files and resources around for your cluster, and I believe that when we set up configuration in a python script, we specify this (more will be discussed later). You can also type `which yarn` to see that it also has a command line utility. Some other commands I think will be useful:
