@@ -3,7 +3,7 @@
 I have an analysis that (maybe) is not well suited for standard High Performance Computing (HPC), but possibly would work with a map/reduce framework. Toward this goal, I am trying to figure out how to use a Spark cluster on TACC, specifically on Wrangler.
 
 
-### Starting Hadoop Cluster on TACC
+## Starting Hadoop Cluster on TACC
 The first thing I went looking for is a spark installation, and so I tried:
 
       module spider spark
@@ -136,7 +136,7 @@ What is blowing my mind is the idea that a file can be "stored" on multiple diff
 
 I'm not entirey sure the reasons I'd want to do this, so I'm not going to mess with it for now.
 
-### Health of HDFS
+## Health of HDFS
 I found a deprecated command to check if a cluster is healthy:
 
     hadoop fsck /users/vsochat
@@ -182,7 +182,132 @@ Interesting, it tells me that the target is 3, but I only have 1, and that there
       Missing replicas:		2 (66.666664 %)
       
 
-### YARN is a resource manager
+## Running Programs
+
+#### Java
+
+Now let's try to run some jobs! First let's try from an example jar. Java isn't my language of choice, but I found this on TACC resources, and seems reasonable to give it a go. Note that these jar files are stored on the local file system, they have code that will work with the cluster, and  work with the data is on the hadoop cluster. and Here we will count words in crimeandpunishment.txt
+
+      hadoop jar /usr/lib/hadoop-mapreduce/hadoop-mapreduce-examples.jar wordcount -D mapred.map.tasks=96 -D mapred.reduce.tasks=24 DATA/crimeandpunishment.txt cap_text_wc
+
+Hooo we have things happening!
+
+      16/05/01 16:16:22 INFO client.RMProxy: Connecting to ResourceManager at c252-118.wrangler.tacc.utexas.edu/129.114.58.161:8032
+      16/05/01 16:16:22 INFO input.FileInputFormat: Total input paths to process : 1
+      16/05/01 16:16:22 INFO mapreduce.JobSubmitter: number of splits:1
+      16/05/01 16:16:22 INFO Configuration.deprecation: mapred.map.tasks is deprecated. Instead, use mapreduce.job.maps
+      16/05/01 16:16:22 INFO Configuration.deprecation: mapred.reduce.tasks is deprecated. Instead, use mapreduce.job.reduces
+      16/05/01 16:16:23 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1462063386551_0001
+      16/05/01 16:16:23 INFO impl.YarnClientImpl: Submitted application application_1462063386551_0001
+      16/05/01 16:16:23 INFO mapreduce.Job: The url to track the job: http://c252-118.wrangler.tacc.utexas.edu:8088/proxy/application_1462063386551_0001/
+      16/05/01 16:16:23 INFO mapreduce.Job: Running job: job_1462063386551_0001
+      16/05/01 16:16:31 INFO mapreduce.Job: Job job_1462063386551_0001 running in uber mode : false
+      16/05/01 16:16:31 INFO mapreduce.Job:  map 0% reduce 0%
+      16/05/01 16:16:36 INFO mapreduce.Job:  map 100% reduce 0%
+      16/05/01 16:16:41 INFO mapreduce.Job:  map 100% reduce 8%
+      16/05/01 16:16:42 INFO mapreduce.Job:  map 100% reduce 13%
+      16/05/01 16:16:43 INFO mapreduce.Job:  map 100% reduce 17%
+      16/05/01 16:16:44 INFO mapreduce.Job:  map 100% reduce 21%
+      16/05/01 16:16:45 INFO mapreduce.Job:  map 100% reduce 25%
+      16/05/01 16:16:46 INFO mapreduce.Job:  map 100% reduce 29%
+      16/05/01 16:16:47 INFO mapreduce.Job:  map 100% reduce 33%
+      16/05/01 16:16:48 INFO mapreduce.Job:  map 100% reduce 42%
+      16/05/01 16:16:49 INFO mapreduce.Job:  map 100% reduce 46%
+      16/05/01 16:16:50 INFO mapreduce.Job:  map 100% reduce 54%
+      16/05/01 16:16:51 INFO mapreduce.Job:  map 100% reduce 63%
+      16/05/01 16:16:52 INFO mapreduce.Job:  map 100% reduce 71%
+      16/05/01 16:16:53 INFO mapreduce.Job:  map 100% reduce 79%
+      16/05/01 16:16:54 INFO mapreduce.Job:  map 100% reduce 88%
+      16/05/01 16:16:55 INFO mapreduce.Job:  map 100% reduce 96%
+      16/05/01 16:16:56 INFO mapreduce.Job:  map 100% reduce 100%
+      16/05/01 16:16:56 INFO mapreduce.Job: Job job_1462063386551_0001 completed successfully
+      16/05/01 16:16:56 INFO mapreduce.Job: Counters: 49
+	File System Counters
+		FILE: Number of bytes read=329998
+		FILE: Number of bytes written=3292867
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		HDFS: Number of bytes read=1154815
+		HDFS: Number of bytes written=242599
+		HDFS: Number of read operations=75
+		HDFS: Number of large read operations=0
+		HDFS: Number of write operations=48
+	Job Counters 
+		Launched map tasks=1
+		Launched reduce tasks=24
+		Data-local map tasks=1
+		Total time spent by all maps in occupied slots (ms)=5720
+		Total time spent by all reduces in occupied slots (ms)=218624
+		Total time spent by all map tasks (ms)=2860
+		Total time spent by all reduce tasks (ms)=54656
+		Total vcore-seconds taken by all map tasks=2860
+		Total vcore-seconds taken by all reduce tasks=54656
+		Total megabyte-seconds taken by all map tasks=11714560
+		Total megabyte-seconds taken by all reduce tasks=447741952
+	Map-Reduce Framework
+		Map input records=22456
+		Map output records=206525
+		Map output bytes=1976334
+		Map output materialized bytes=329998
+		Input split bytes=151
+		Combine input records=206525
+		Combine output records=22390
+		Reduce input groups=22390
+		Reduce shuffle bytes=329998
+		Reduce input records=22390
+		Reduce output records=22390
+		Spilled Records=44780
+		Shuffled Maps =24
+		Failed Shuffles=0
+		Merged Map outputs=24
+		GC time elapsed (ms)=3072
+		CPU time spent (ms)=47700
+		Physical memory (bytes) snapshot=10315898880
+		Virtual memory (bytes) snapshot=258443550720
+		Total committed heap usage (bytes)=53245894656
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=1154664
+	File Output Format Counters 
+		Bytes Written=242599
+
+I tried looking into the jar file, but all I can see are compiled class files, so I can also assume that the code assumes paths originating from the running users home directory (e.g., /user/vsochat) since I could specify the crimeandpunishment.txt just as being at `DATA/crimeandpunishment.txt`. Let's look at the result file! Is it in my data folder?
+
+      hadoop fs -ls /user/vsochat/DATA
+
+Nope. Didn't see it. It must be that the output folder/file is also relative to the user home, so let's look there:
+
+      hadoop fs -ls /user/vsochat
+      Found 2 items
+      drwxr-xr-x   - vsochat hadoop          0 2016-05-01 15:14 /user/vsochat/DATA
+      drwxr-xr-x   - vsochat hadoop          0 2016-05-01 16:16 /user/vsochat/cap_text_wc
+
+Ah, it's a folder! Found it! How many files are inside?
+
+      hadoop fs -ls /user/vsochat/cap_text_wc | wc -l
+      26
+
+      hadoop fs -cat cap_text_wc/part-r-00000
+
+      ...
+
+      whispered	35
+      white	33
+      who?"	1
+      whom	61
+      ...
+ 
+It looks like we would have needed to do some original parsing to deal with punctuation, etc., but it worked! I'm going to move away from Java (don't really want to use Java...) and try programs in Python next.
+
+
+## YARN is a resource manager
 there is something called YARN (yet another resource manager) that looks like it helps to move files and resources around for your cluster, and I believe that when we set up configuration in a python script, we specify this (more will be discussed later). You can also type `which yarn` to see that it also has a command line utility. Some other commands I think will be useful:
 
 
@@ -194,5 +319,5 @@ shows running nodes in your cluster, and
 
 lets you get logs for some node or application.
 
-### Spark has data frames
+## Spark has data frames
 it looks like in 2015 they made something called a "[spark dataframe](https://databricks.com/blog/2015/02/17/introducing-dataframes-in-spark-for-large-scale-data-science.html)" to make it easy to run map/reduce operations over data - it's like a pandas data frame but accessible across an entire cluster! I'm not sure what [HIVE](https://cwiki.apache.org/confluence/display/Hive/Home) is but I keep seeing it mentioned, so likely it will be important.
