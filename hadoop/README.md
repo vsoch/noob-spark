@@ -337,6 +337,153 @@ Ah, it's a folder! Found it! How many files are inside?
  
 It looks like we would have needed to do some original parsing to deal with punctuation, etc., but it worked! I'm going to move away from Java (don't really want to use Java...) and try programs in Python next.
 
+#### Spark
+
+Let's try something with spark. I remember that I saw something called "run-example" that produced some spectacular errors when I was trying to run it without a hadoop file system. Does it work now? 
+
+      /usr/lib/spark/bin/run-example
+
+      Usage: ./bin/run-example <example-class> [example-args]
+        - set MASTER=XX to use a specific master
+        - can use abbreviated example class name relative to com.apache.spark.examples
+           (e.g. SparkPi, mllib.LinearRegression, streaming.KinesisWordCountASL)
+
+Let's try LinearRegression. I was watching a video online and they mentioned something about MLLib that there are a crapton of machine learning functions. There is also one called SparkML that seems to be popular.
+
+      /usr/lib/spark/bin/run-example mllib.LinearRegression
+
+      LinearRegression: an example app for linear regression.
+      Usage: LinearRegression [options] <input>
+
+        --numIterations <value>
+              number of iterations
+        --stepSize <value>
+              initial step size, default: 1.0
+        --regType <value>
+              regularization type (NONE,L1,L2), default: L2
+        --regParam <value>
+              regularization parameter, default: 0.01
+        <input>
+              input paths to labeled examples in LIBSVM format
+
+      For example, the following command runs this app on a synthetic dataset:
+
+       bin/spark-submit --class org.apache.spark.examples.mllib.LinearRegression \
+        examples/target/scala-*/spark-examples-*.jar \
+        data/mllib/sample_linear_regression_data.txt
+
+I couldn't find this sample data file on TACC, but I found it online and added it to [data/sample_linear_regression_data.txt](data/sample_linear_regression_data.txt). Let's add this file to hdfs:
+
+      hadoop fs -put data/sample_linear_regression_data.txt /user/vsochat/DATA
+      hadoop fs -ls /user/vsochat/DATA
+      Found 2 items
+      -rw-r--r--   3 vsochat hadoop    1154664 2016-04-30 21:38 /user/vsochat/DATA/crimeandpunishment.txt
+      -rw-r--r--   2 vsochat hadoop     119069 2016-05-01 16:57 /user/vsochat/DATA/sample_linear_regression_data.txt
+
+There it is! Let's try running linear regression. We will need to change some of the paths to coincide with what actually exists on TACC.
+
+        /usr/lib/spark/bin/spark-submit --class org.apache.spark.examples.mllib.LinearRegression \
+        /usr/lib/spark/examples/lib/spark-examples-1.5.0-cdh5.5.1-hadoop2.6.0-cdh5.5.1.jar \
+        DATA/sample_linear_regression_data.txt
+
+Looks like some of the BLAS libraries failed, but we still got a result!
+
+      16/05/01 16:59:06 INFO spark.SparkContext: Running Spark version 1.5.0-cdh5.5.1
+      16/05/01 16:59:06 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+      16/05/01 16:59:07 INFO spark.SecurityManager: Changing view acls to: vsochat
+      16/05/01 16:59:07 INFO spark.SecurityManager: Changing modify acls to: vsochat
+      16/05/01 16:59:07 INFO spark.SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: Set(vsochat); users with modify permissions: Set(vsochat)
+      16/05/01 16:59:07 INFO slf4j.Slf4jLogger: Slf4jLogger started
+      16/05/01 16:59:07 INFO Remoting: Starting remoting
+      16/05/01 16:59:07 INFO Remoting: Remoting started; listening on addresses :[akka.tcp://sparkDriver@129.114.58.161:59143]
+      16/05/01 16:59:07 INFO Remoting: Remoting now listens on addresses: [akka.tcp://sparkDriver@129.114.58.161:59143]
+      16/05/01 16:59:07 INFO util.Utils: Successfully started service 'sparkDriver' on port 59143.
+      16/05/01 16:59:07 INFO spark.SparkEnv: Registering MapOutputTracker
+      16/05/01 16:59:07 INFO spark.SparkEnv: Registering BlockManagerMaster
+      16/05/01 16:59:08 INFO storage.DiskBlockManager: Created local directory at /tmp/blockmgr-96cfde10-ad59-4f02-af32-1b18d295f00d
+      16/05/01 16:59:08 INFO storage.MemoryStore: MemoryStore started with capacity 530.0 MB
+      16/05/01 16:59:08 INFO spark.HttpFileServer: HTTP File server directory is /tmp/spark-b6e497c7-9c2e-49d2-8da1-6a27f7c2db05/httpd-ceded285-cdd6-4ccd-8640-77f6d7d45bda
+      16/05/01 16:59:08 INFO spark.HttpServer: Starting HTTP Server
+      16/05/01 16:59:08 INFO server.Server: jetty-8.y.z-SNAPSHOT
+      16/05/01 16:59:08 INFO server.AbstractConnector: Started SocketConnector@0.0.0.0:34623
+      16/05/01 16:59:08 INFO util.Utils: Successfully started service 'HTTP file server' on port 34623.
+      16/05/01 16:59:08 INFO spark.SparkEnv: Registering OutputCommitCoordinator
+      16/05/01 16:59:08 INFO server.Server: jetty-8.y.z-SNAPSHOT
+      16/05/01 16:59:08 INFO server.AbstractConnector: Started SelectChannelConnector@0.0.0.0:4040
+      16/05/01 16:59:08 INFO util.Utils: Successfully started service 'SparkUI' on port 4040.
+      16/05/01 16:59:08 INFO ui.SparkUI: Started SparkUI at http://129.114.58.161:4040
+      16/05/01 16:59:08 INFO spark.SparkContext: Added JAR file:/usr/lib/spark/examples/lib/spark-examples-1.5.0-cdh5.5.1-hadoop2.6.0-cdh5.5.1.jar at http://129.114.58.161:34623/jars/spark-examples-1.5.0-cdh5.5.1-hadoop2.6.0-cdh5.5.1.jar with timestamp 1462139948508
+      16/05/01 16:59:08 WARN metrics.MetricsSystem: Using default name DAGScheduler for source because spark.app.id is not set.
+      16/05/01 16:59:08 INFO executor.Executor: Starting executor ID driver on host localhost
+      16/05/01 16:59:08 INFO util.Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 57254.
+      16/05/01 16:59:08 INFO netty.NettyBlockTransferService: Server created on 57254
+      16/05/01 16:59:08 INFO storage.BlockManagerMaster: Trying to register BlockManager
+      16/05/01 16:59:08 INFO storage.BlockManagerMasterEndpoint: Registering block manager localhost:57254 with 530.0 MB RAM, BlockManagerId(driver, localhost, 57254)
+      16/05/01 16:59:08 INFO storage.BlockManagerMaster: Registered BlockManager
+Training: 391, test: 110.
+      16/05/01 16:59:11 WARN netlib.BLAS: Failed to load implementation from: com.github.fommil.netlib.NativeSystemBLAS
+      16/05/01 16:59:11 WARN netlib.BLAS: Failed to load implementation from: com.github.fommil.netlib.NativeRefBLAS
+      Test RMSE = 10.430543451248058.
+
+It's interesting that we see it setting up a web server (Jetty). I bet if we were to launch this instance from the TACC visualization portal, we would get some kind of interface for our Spark job.
+
+###### The Interactive Spark Console
+I also see an executable called spark-shell, and it seems to already be on my path. Let's try running something from it, which (scary) I think means we will try some Scala:
+
+
+spark-shell --master=yarn-client
+
+You will see a bunch of stuff flash across the screen...
+
+      Welcome to
+            ____              __
+           / __/__  ___ _____/ /__
+          _\ \/ _ \/ _ `/ __/  '_/
+         /___/ .__/\_,_/_/ /_/\_\   version 1.5.0-cdh5.5.1
+            /_/
+
+      Using Scala version 2.10.4 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)
+      Type in expressions to have them evaluated.
+ 
+And some useful commands:
+
+      :help           Show spark-shell commands help
+      :sh <command>	Run a shell command from within spark shell 
+
+I believe this will run spark using files in the local file system. Let's try to read in the book.txt file in this directory.
+
+      val filey = sc.textFile("DATA/crimeandpunishment.txt")
+      val words = filey.flatMap(_.split(" "))
+
+      words
+      res1: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[6] at flatMap at <console>:23
+
+      val word_count = words.map(w => (w, 1)).reduceByKey(_ + _)
+      16/05/01 17:08:05 INFO mapred.FileInputFormat: Total input paths to process : 1
+word_count: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[8] at reduceByKey at <console>:25
+
+      word_count.saveAsTextFile("DATA/cap_word_counts") 
+
+I then exit to see if I could find the output. Turns out, the function saveAsTextFile generates a directory:
+
+      hadoop fs -ls /user/vsochat/DATA/cap_word_counts
+      Found 3 items
+      -rw-r--r--   2 vsochat hadoop          0 2016-05-01 17:09 /user/vsochat/DATA/cap_word_counts/_SUCCESS
+      -rw-r--r--   2 vsochat hadoop     142486 2016-05-01 17:09 /user/vsochat/DATA/cap_word_counts/part-00000
+      -rw-r--r--   2 vsochat hadoop     144901 2016-05-01 17:09 /user/vsochat/DATA/cap_word_counts/part-00001
+
+The file `_SUCCESS` is totally empty, it's presence alone must indicate success.
+
+
+      hadoop fs -cat /user/vsochat/DATA/cap_word_counts/part-00001
+      ..
+      (expressed,,1)
+      (darning,1)
+      (lower,9)
+      (inhumanly,1)
+      (hesitating?,1)
+
+Seems to again have worked, again sans removal of punctuation, etc. :).
 
 ## YARN is a resource manager
 there is something called YARN (yet another resource manager) that looks like it helps to move files and resources around for your cluster, and I believe that when we set up configuration in a python script, we specify this (more will be discussed later). You can also type `which yarn` to see that it also has a command line utility. Some other commands I think will be useful:
