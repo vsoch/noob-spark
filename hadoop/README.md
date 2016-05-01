@@ -32,24 +32,63 @@ I then was able to do `which hadoop` to see that it was installed, and then when
 
 #### Hadoop File System Commands
 
-TO list the directories in hdfs
+The first thing I wanted to do was just see the file system directories. I didn't know what I was doing, so I found the help command:
 
-hadoop fs -ls /
+      hadoop fs -help
 
-#create a data directory in the default home direcotry in hdfs
+Phew! Documentation! You can do that with:
 
-hadoop fs -mkdir data
+      hadoop fs -ls /
 
-# copy file from local file system to hdfs
-hadoop fs -put /work/00791/xwj/hadoop-training/test_text.txt data
+      Found 3 items
+      drwxrwxrwx   - mapred hadoop          0 2016-04-30 21:42 /tmp
+      drwxr-xr-x   - hdfs   hadoop          0 2016-04-30 19:47 /user
+      drwxrwxr-x   - hdfs   hadoop          0 2016-04-30 19:43 /var
 
-hadoop fs -put /work/00791/xwj/hadoop-training/stories data
+Note that if you don't have the slash (indicative of the base path), you won't see anything! Next I wanted to try adding a file. From my base directory where I created a text file with Crime and Punishment, I did:
 
-# check stat of a file 
-hadoop fs -stat data/test_text.txt 
+      hadoop fs -put crimeandpunishment.txt
 
-# output text file to stdout
-hadoop fs -cat data/test_text.txt
+If you try to put a file that is already there, it gives you an error:
+
+      hadoop fs -put crimeandpunishment.txt 
+      put: `crimeandpunishment.txt': File exists
+
+Note that you can also retrieve a file from the hadoop file system with get, and if the file already exists, you get an equivalent error:
+
+      hadoop fs -get crimeandpunishment.txt 
+      get: `crimeandpunishment.txt': File exists
+
+The next thing that makes sense to do is create a directory to put data in. Let's call it DATA.
+
+      hadoop fs -mkdir DATA
+
+This by default will be created in my home folder. The way they have set it up on TACC, the "user" folder has everyone's user name in it, and this is considered the home folder. To see this folder with the new directory, I need to change the ls command a bit:
+
+      hadoop fs -ls /user/vsochat
+      Found 2 items
+      drwxr-xr-x   - vsochat hadoop          0 2016-05-01 15:06 /user/vsochat/DATA
+      -rw-r--r--   2 vsochat hadoop    1154664 2016-04-30 21:38 /user/vsochat/crimeandpunishment.txt
+
+This is good, but oups, maybe I should have put crimeandpunishment.txt into the DATA folder? Let's see if we can move it!
+
+      hadoop fs -mv /user/vsochat/crimeandpunishment.txt /user/vsochat/DATA
+      hadoop fs -ls /user/vsochat/DATA
+      Found 1 items
+      -rw-r--r--   2 vsochat hadoop    1154664 2016-04-30 21:38 /user/vsochat/DATA/crimeandpunishment.txt
+
+Success! I found some other cool commands too. We can check the status of a file, look at the file (eg cat/tail)
+
+      hadoop fs -stat /user/vsochat/DATA/crimeandpunishment.txt 
+      2016-05-01 02:38:39
+
+      hadoop fs -tail /user/vsochat/DATA/crimeandpunishment.txt
+      hadoop fs -cat /user/vsochat/DATA/crimeandpunishment.txt
+
+You can also count the number of files at a path:
+
+      hadoop fs -count /user/vsochat/DATA
+           1            1            1154664 /user/vsochat/DATA
 
 
 ### YARN is a resource manager
