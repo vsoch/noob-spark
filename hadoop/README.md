@@ -278,7 +278,38 @@ Hooo we have things happening!
 	File Output Format Counters 
 		Bytes Written=242599
 
-I tried looking into the jar file, but all I can see are compiled class files, so I can also assume that the code assumes paths originating from the running users home directory (e.g., /user/vsochat) since I could specify the crimeandpunishment.txt just as being at `DATA/crimeandpunishment.txt`. Let's look at the result file! Is it in my data folder?
+I tried looking into the jar file, but all I can see are compiled class files, so I can also assume that the code assumes paths originating from the running users home directory (e.g., /user/vsochat) since I could specify the crimeandpunishment.txt just as being at `DATA/crimeandpunishment.txt`. Actually, let's not assume things - I found a .java file to take a look at how the cluster is configured. First, it looks like we import functions from apache.hadoop.*:
+
+      import java.io.IOException;
+      import java.util.StringTokenizer;
+
+      import org.apache.hadoop.conf.Configuration;
+      import org.apache.hadoop.fs.Path;
+      import org.apache.hadoop.io.IntWritable;
+      import org.apache.hadoop.io.Text;
+      import org.apache.hadoop.mapreduce.Job;
+      import org.apache.hadoop.mapreduce.Mapper;
+      import org.apache.hadoop.mapreduce.Reducer;
+      import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+      import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+If I remember java, the public static void main is running the show, so let's look there to see how the cluster is configured:
+
+      public static void main(String[] args) throws Exception {
+          Configuration conf = new Configuration();
+          Job job = Job.getInstance(conf, "word count");
+          job.setJarByClass(WordCount.class);
+          job.setMapperClass(TokenizerMapper.class);
+          job.setCombinerClass(IntSumReducer.class);
+          job.setReducerClass(IntSumReducer.class);
+          job.setOutputKeyClass(Text.class);
+          job.setOutputValueClass(IntWritable.class);
+          FileInputFormat.addInputPath(job, new Path(args[0]));
+          FileOutputFormat.setOutputPath(job, new Path(args[1]));
+          System.exit(job.waitForCompletion(true) ? 0 : 1);
+      }
+
+We basically create a new configuration, point it to another class  (WordCount.class, the original file I tried looking at and duh, it's compiled), and then set different functions for mapping and reducing, and the input file is the first command argument (as we saw above) and the output the second. I think it must be the case that when I run the hadoop command, this by default "knows" it is relative to my hdfs, and the paths are expected to be there. I'm satisfied with this level of "understanding" for now. Let's look at the result file! Is it in my data folder?
 
       hadoop fs -ls /user/vsochat/DATA
 
