@@ -28,7 +28,10 @@ and then when it was active, I could connect to it by obtaining the name (either
 
       idev -r hadoop+Analysis_Lonestar+1457 -m 700
 
-I then was able to do `which hadoop` to see that it was installed, and then when I typed `hadoop fs` I could see all of the [command options](http://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-common/FileSystemShell.html). 
+I then was able to do `which hadoop` to see that it was installed, and then when I typed `hadoop fs` I could see all of the [command options](http://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-common/FileSystemShell.html). I found a good definition of HDFS [here](https://developer.yahoo.com/hadoop/tutorial/module2.html):
+
+      >> HDFS, the Hadoop Distributed File System, is a distributed file system designed to hold very large amounts of data (terabytes or even petabytes), and provide high-throughput access to this information. Files are stored in a redundant fashion across multiple machines to ensure their durability to failure and high availability to very parallel applications. This module introduces the design of this distributed file system and instructions on how to operate it.
+
 
 #### Hadoop File System Commands
 
@@ -70,6 +73,7 @@ This by default will be created in my home folder. The way they have set it up o
       drwxr-xr-x   - vsochat hadoop          0 2016-05-01 15:06 /user/vsochat/DATA
       -rw-r--r--   2 vsochat hadoop    1154664 2016-04-30 21:38 /user/vsochat/crimeandpunishment.txt
 
+###### Moving, Viewing, and Renaming Files
 This is good, but oups, maybe I should have put crimeandpunishment.txt into the DATA folder? Let's see if we can move it!
 
       hadoop fs -mv /user/vsochat/crimeandpunishment.txt /user/vsochat/DATA
@@ -90,6 +94,33 @@ You can also count the number of files at a path:
       hadoop fs -count /user/vsochat/DATA
            1            1            1154664 /user/vsochat/DATA
 
+###### Replication Factor and Block Size
+There is something called `replication factor` which gets at the number of duplicated blocks (of a file) distributed across the cluster. I haven't run anything yet so it's not totally intuitive what this means, but I found a command for adjusted the replication factor of a file:
+
+      -setrep [-R] [-w] <rep> <path> ... :
+        Set the replication level of a file. If <path> is a directory then the command
+        recursively changes the replication factor of all files under the directory tree
+        rooted at <path>.
+                                                                                 
+        -w  It requests that the command waits for the replication to complete. This   
+            can potentially take a very long time.                                     
+        -R  It is accepted for backwards compatibility. It has no effect. 
+
+Meaning I could do something like:
+
+      hadoop fs –setrep –w 3 /user/vsochat/DATA/crimeandpunishment.txt
+
+to set the replication factor to 3. Note that you can set a global replication factor for an entire cluster in the hadoop config file, which I'm not sure I have access to (but haven't looked yet). The default is 3.
+
+Block size is defined as ([from](http://princetonits.com/blog/technology/how-to-configure-replication-factor-and-block-size-for-hdfs/)):
+
+      >> The block size setting is used by HDFS to divide files into blocks and then distribute those blocks across the cluster. For example, if a cluster is using a block size of 64 MB, and a 128-MB text file was put in to HDFS, HDFS would split the file into two blocks (128 MB/64 MB) and distribute the two chunks to the data nodes in the cluster.
+
+This also looks like it is set in the global config, but you can do on the command line as well:
+
+      hadoop fs -Ddfs.block.size=1048576
+
+I'm not entirey sure the reasons I'd want to do this, so I'm not going to mess with it for now.
 
 ### YARN is a resource manager
 there is something called YARN (yet another resource manager) that looks like it helps to move files and resources around for your cluster, and I believe that when we set up configuration in a python script, we specify this (more will be discussed later). You can also type `which yarn` to see that it also has a command line utility. Some other commands I think will be useful:
@@ -105,6 +136,3 @@ lets you get logs for some node or application.
 
 ### Spark has data frames
 it looks like in 2015 they made something called a "[spark dataframe](https://databricks.com/blog/2015/02/17/introducing-dataframes-in-spark-for-large-scale-data-science.html)" to make it easy to run map/reduce operations over data - it's like a pandas data frame but accessible across an entire cluster! I'm not sure what [HIVE](https://cwiki.apache.org/confluence/display/Hive/Home) is but I keep seeing it mentioned, so likely it will be important.
-
- 
-**MORE COMING SOON - writing this now :P**
