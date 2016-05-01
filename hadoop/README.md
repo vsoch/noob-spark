@@ -450,7 +450,7 @@ And some useful commands:
       :help           Show spark-shell commands help
       :sh <command>	Run a shell command from within spark shell 
 
-I believe this will run spark using files in the local file system. Let's try to read in the book.txt file in this directory.
+I believe this will run spark using files in the local file system. Let's try to read in our crimeandpunishment.txt file.
 
       val filey = sc.textFile("DATA/crimeandpunishment.txt")
       val words = filey.flatMap(_.split(" "))
